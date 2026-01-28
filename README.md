@@ -101,3 +101,50 @@ RFC caches do not:
 Artifactory does.
 
 This is artifact repository behavior, not proxy behavior.
+
+```text
+// Artifactory Docker Remote/Virtual Repository Pseudocode
+
+onClientRequest(request):
+    // 1. Act as registry endpoint
+    if request.type == "docker":
+        hideUpstreamDetails()
+        handleAuthAndRedirectsInternally()
+
+    // 2. Persistent, addressable cache
+    if isArtifact(request):
+        if not inCache(request):
+            fetchFromUpstream(request)
+            storeAsArtifact(request)
+            indexArtifact(request)
+        serveFromCache(request)
+
+    // 3. Content transformation
+    if needsTransformation(request):
+        rewritePaths(request)
+        synthesizeMarkers(request)
+        mergeCatalogsIfVirtual(request)
+        enforceSchemaPolicies(request)
+        rewriteHeaders(request)
+
+    // 4. Independent upstream logic
+    if shouldFetchDifferently(request):
+        maybeFetchByDigest()
+        maybeFetchWithMarkerUrls()
+        proactiveIndexingFetches()
+        serveStaleOrCachedIfOffline()
+        blockIfPolicyViolation()
+
+    // 5. Aggregation (virtual repos)
+    if isVirtualRepo(request):
+        mergeMultipleUpstreams(request)
+        mergeTagsAndCatalogs(request)
+        mergeReferrersIndexes(request)
+
+    // 6. Indexing
+    updateIndexes(request)
+    runBackgroundCleanup()
+    runIncrementalIndexers()
+
+    return response
+```
